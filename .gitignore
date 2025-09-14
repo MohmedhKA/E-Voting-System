@@ -1,0 +1,59 @@
+# Hyperledger Fabric binaries
+/bin/
+
+# Generated crypto material
+/config/crypto-config/
+/config/crypto-config-multi/
+/config/msp/
+/config/tls/
+*.pem
+
+# Docker compose generated files
+/docker-compose/crypto-config/
+/docker-compose/config/
+
+# Fabric CA server files
+*.db
+IssuerPublicKey
+IssuerRevocationPublicKey
+IssuerSecretKey
+
+# Generated chaincode artifacts
+/chaincode/go/evoting/evoting
+/chaincode/go/**/vendor/
+
+# Go specific
+*.exe
+*.test
+*.out
+*.o
+*.a
+/pkg/
+/bin/
+*.so
+
+# IDE specific
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+*.swp
+*.swo
+
+# Compressed files
+*.tar.gz
+
+# Log files
+*.log
+
+# Environment variables
+.env
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build directories
+build/
+dist/
