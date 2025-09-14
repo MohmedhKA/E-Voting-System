@@ -1,0 +1,34 @@
+# crypto-config-multi.yaml - Multi-org E-Voting Network
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: example.com
+    Specs:
+      - Hostname: orderer1
+      - Hostname: orderer2  
+      - Hostname: orderer3
+
+PeerOrgs:
+  - Name: ElectionCommission
+    Domain: ec.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+    Users:
+      Count: 1
+
+  - Name: PoliticalParty
+    Domain: party.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+    Users:
+      Count: 1
+
+  - Name: AuditAuthority
+    Domain: audit.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
