@@ -1,59 +1,65 @@
-# Hyperledger Fabric binaries
-/bin/
+# Blockchain - Hyperledger Fabric
+blockchain/bin/
+blockchain/config/crypto-config/
+blockchain/config/crypto-config-multi/
+blockchain/config/msp/
+blockchain/config/tls/
+blockchain/**/*.pem
+blockchain/docker-compose/crypto-config/
+blockchain/docker-compose/config/
+blockchain/**/*.db
+blockchain/**/IssuerPublicKey
+blockchain/**/IssuerRevocationPublicKey
+blockchain/**/IssuerSecretKey
+blockchain/chaincode/go/evoting/evoting
+blockchain/chaincode/go/**/vendor/
+blockchain/**/*.tar.gz
 
-# Generated crypto material
-/config/crypto-config/
-/config/crypto-config-multi/
-/config/msp/
-/config/tls/
-*.pem
+# Backend - Node.js
+backend/node_modules/
+backend/.env
+backend/dist/
+backend/build/
+backend/coverage/
+backend/logs/
+backend/.npm
+backend/*.log
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
 
-# Docker compose generated files
-/docker-compose/crypto-config/
-/docker-compose/config/
-
-# Fabric CA server files
-*.db
-IssuerPublicKey
-IssuerRevocationPublicKey
-IssuerSecretKey
-
-# Generated chaincode artifacts
-/chaincode/go/evoting/evoting
-/chaincode/go/**/vendor/
-
-# Go specific
-*.exe
-*.test
-*.out
-*.o
-*.a
-/pkg/
-/bin/
-*.so
+# Frontend - React
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/build/
+frontend/dist/
+frontend/coverage/
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
 
 # IDE specific
 .vscode/
 .idea/
-
-# OS specific
-.DS_Store
+*.sublime-*
 *.swp
 *.swo
 
-# Compressed files
-*.tar.gz
+# OS specific
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
 
-# Log files
-*.log
-
-# Environment variables
-.env
-
-# Dependencies
-node_modules/
-vendor/
-
-# Build directories
-build/
-dist/
+# Common
+**/node_modules/
+**/.env
+**/*.log
+**/dist/
+**/build/
+**/coverage/
