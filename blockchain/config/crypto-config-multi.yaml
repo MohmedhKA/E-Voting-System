@@ -1,11 +1,10 @@
-# crypto-config-multi.yaml - Multi-org E-Voting Network
-
+# crypto-config-multi.yaml
 OrdererOrgs:
   - Name: Orderer
     Domain: example.com
     Specs:
       - Hostname: orderer1
-      - Hostname: orderer2  
+      - Hostname: orderer2
       - Hostname: orderer3
 
 PeerOrgs:
