@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 🗳️ E-Voting Multi-Org Raft Network Startup Script
-# Fixed PATH and improved error logging
+# Fixed PATH and container counting bug
 
 set -e
 
@@ -79,8 +79,8 @@ generate_crypto() {
     echo -e "${YELLOW}=====> 1. Generating Crypto Material...${NC}"
     
     # Clean old material
-    sudo rm -rf crypto-config/
-    sudo rm -f genesis.block evoting-channel.tx
+    rm -rf crypto-config/
+    rm -f genesis.block evoting-channel.tx
     
     # Set Fabric config path
     export FABRIC_CFG_PATH=$FABRIC_CFG_PATH
@@ -127,8 +127,11 @@ check_network_status() {
     echo -e "${BLUE}All Container Statuses:${NC}"
     docker ps -a --filter "name=orderer\|peer\|ca\." --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     
-    # Count running containers
-    RUNNING_COUNT=$(docker ps --filter "name=orderer\|peer\|ca\." --format "{{.Names}}" | wc -l)
+    # FIXED: Count running containers correctly
+    RUNNING_COUNT=$(docker ps --filter "name=orderer" --format "{{.Names}}" | wc -l)
+    RUNNING_COUNT=$((RUNNING_COUNT + $(docker ps --filter "name=peer" --format "{{.Names}}" | wc -l)))
+    RUNNING_COUNT=$((RUNNING_COUNT + $(docker ps --filter "name=ca\." --format "{{.Names}}" | wc -l)))
+    
     TOTAL_EXPECTED=11
     
     echo ""
@@ -149,7 +152,7 @@ check_raft_consensus() {
     
     for i in 1 2 3; do
         echo -e "${BLUE}Orderer$i Raft Status:${NC}"
-        docker logs orderer$i.example.com 2>/dev/null | grep -i "raft\|leader\|elected" | tail -2 || echo "  Still initializing..."
+        docker logs orderer$i.example.com 2>/dev/null | grep -i "leader\|elected" | tail -2 || echo "  Still initializing..."
     done
 }
 
