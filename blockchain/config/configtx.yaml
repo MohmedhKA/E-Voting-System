@@ -1,10 +1,11 @@
-# configtx.yaml - Multi-org Raft Configuration
+# configtx-raft.yaml - Multi-org Raft Configuration
 
 Organizations:
+
   - &OrdererOrg
     Name: OrdererOrg
     ID: OrdererMSP
-    MSPDir: ../crypto-config/ordererOrganizations/example.com/msp
+    MSPDir: crypto-config/ordererOrganizations/example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -23,7 +24,7 @@ Organizations:
   - &ElectionCommission
     Name: ElectionCommissionMSP
     ID: ElectionCommissionMSP
-    MSPDir: ../crypto-config/peerOrganizations/ec.example.com/msp
+    MSPDir: crypto-config/peerOrganizations/ec.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -44,7 +45,7 @@ Organizations:
   - &PoliticalPartyOrg
     Name: PoliticalPartyMSP
     ID: PoliticalPartyMSP
-    MSPDir: ../crypto-config/peerOrganizations/party.example.com/msp
+    MSPDir: crypto-config/peerOrganizations/party.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -65,7 +66,7 @@ Organizations:
   - &AuditAuthority
     Name: AuditAuthorityMSP
     ID: AuditAuthorityMSP
-    MSPDir: ../crypto-config/peerOrganizations/audit.example.com/msp
+    MSPDir: crypto-config/peerOrganizations/audit.example.com/msp
     Policies:
       Readers:
         Type: Signature
@@ -86,8 +87,10 @@ Organizations:
 Capabilities:
   Channel: &ChannelCapabilities
     V2_0: true
+
   Orderer: &OrdererCapabilities
     V2_0: true
+
   Application: &ApplicationCapabilities
     V2_0: true
 
@@ -102,7 +105,7 @@ Application: &ApplicationDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
+      Rule: "ANY Admins"
     LifecycleEndorsement:
       Type: ImplicitMeta
       Rule: "MAJORITY Endorsement"
@@ -118,16 +121,16 @@ Orderer: &OrdererDefaults
     Consenters:
       - Host: orderer1.example.com
         Port: 7050
-        ClientTLSCert: ../crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
-        ServerTLSCert: ../crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
       - Host: orderer2.example.com
-        Port: 7050
-        ClientTLSCert: ../crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
-        ServerTLSCert: ../crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
+        Port: 8050
+        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
       - Host: orderer3.example.com
-        Port: 7050
-        ClientTLSCert: ../crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
-        ServerTLSCert: ../crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
+        Port: 9050
+        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
   Addresses:
     - orderer1.example.com:7050
     - orderer2.example.com:8050
@@ -147,7 +150,7 @@ Orderer: &OrdererDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
+      Rule: "ANY Admins"
     BlockValidation:
       Type: ImplicitMeta
       Rule: "ANY Writers"
@@ -164,7 +167,7 @@ Channel: &ChannelDefaults
       Rule: "ANY Writers"
     Admins:
       Type: ImplicitMeta
-      Rule: "MAJORITY Admins"
+      Rule: "ANY Admins"
   Capabilities:
     <<: *ChannelCapabilities
 
@@ -191,7 +194,7 @@ Profiles:
       <<: *ApplicationDefaults
       Organizations:
         - *ElectionCommission
-        - *PoliticalPartyOrg
+        - *PoliticalPartyOrg  
         - *AuditAuthority
       Capabilities:
         <<: *ApplicationCapabilities

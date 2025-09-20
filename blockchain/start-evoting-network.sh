@@ -79,8 +79,8 @@ generate_crypto() {
     echo -e "${YELLOW}=====> 1. Generating Crypto Material...${NC}"
     
     # Clean old material
-    rm -rf crypto-config/
-    rm -f genesis.block evoting-channel.tx
+    sudo rm -rf crypto-config/
+    sudo rm -f genesis.block evoting-channel.tx
     
     # Set Fabric config path
     export FABRIC_CFG_PATH=$FABRIC_CFG_PATH
@@ -89,6 +89,22 @@ generate_crypto() {
     echo -e "${BLUE}Generating certificates for Election Commission, Political Party, and Audit Authority...${NC}"
     cryptogen generate --config=config/crypto-config-multi.yaml --output=crypto-config
     
+    echo -e "${BLUE}Copying admin certificates to admincerts folders...${NC}"
+
+    # Election Commission admin certs
+    mkdir -p crypto-config/peerOrganizations/ec.example.com/users/Admin@ec.example.com/msp/admincerts
+    cp crypto-config/peerOrganizations/ec.example.com/users/Admin@ec.example.com/msp/signcerts/* crypto-config/peerOrganizations/ec.example.com/users/Admin@ec.example.com/msp/admincerts/
+
+    # Political Party admin certs
+    mkdir -p crypto-config/peerOrganizations/party.example.com/users/Admin@party.example.com/msp/admincerts
+    cp crypto-config/peerOrganizations/party.example.com/users/Admin@party.example.com/msp/signcerts/* crypto-config/peerOrganizations/party.example.com/users/Admin@party.example.com/msp/admincerts/
+
+    # Audit Authority admin certs
+    mkdir -p crypto-config/peerOrganizations/audit.example.com/users/Admin@audit.example.com/msp/admincerts
+    cp crypto-config/peerOrganizations/audit.example.com/users/Admin@audit.example.com/msp/signcerts/* crypto-config/peerOrganizations/audit.example.com/users/Admin@audit.example.com/msp/admincerts/
+
+    echo -e "${GREEN}✅ Admin certificates copied successfully!${NC}"
+    
     # Generate genesis block
     echo -e "${BLUE}Generating Genesis Block with Raft consensus...${NC}"
     configtxgen -profile MultiOrgRaftGenesis -outputBlock genesis.block -channelID system-channel
@@ -96,9 +112,77 @@ generate_crypto() {
     # Generate channel transaction
     echo -e "${BLUE}Generating Channel Transaction...${NC}"
     configtxgen -profile MultiOrgChannel -outputCreateChannelTx evoting-channel.tx -channelID evotingchannel
+
+    # Replace the anchor peer generation section with this:
+    echo -e "${BLUE}Generating Channel Transaction with Embedded Anchor Peers...${NC}"
+
+    # Add this to generate_crypto() after channel tx generation:
+
+    # Generate anchor peer updates
+    echo -e "${BLUE}Generating anchor peer updates...${NC}"
+    mkdir -p channel-artifacts
     
+    configtxgen -profile MultiOrgChannel \
+        -outputAnchorPeersUpdate ./channel-artifacts/ElectionCommissionMSPanchors.tx \
+        -channelID evotingchannel \
+        -asOrg ElectionCommissionMSP
+        
+    configtxgen -profile MultiOrgChannel \
+        -outputAnchorPeersUpdate ./channel-artifacts/PoliticalPartyMSPanchors.tx \
+        -channelID evotingchannel \
+        -asOrg PoliticalPartyMSP
+        
+    configtxgen -profile MultiOrgChannel \
+        -outputAnchorPeersUpdate ./channel-artifacts/AuditAuthorityMSPanchors.tx \
+        -channelID evotingchannel \
+        -asOrg AuditAuthorityMSP
+
+    # Don't generate separate anchor peer files - they're already embedded!
+    echo -e "${GREEN}✅ Channel transaction with anchor peers generated!${NC}"
+  
     echo -e "${GREEN}✅ Crypto material generated successfully!${NC}"
 }
+
+# Add this function after check_raft_consensus()
+create_and_join_channel() {
+    echo -e "${YELLOW}=====> Creating and Joining Channel...${NC}"
+    
+    # Set environment for EC peer
+    export CORE_PEER_LOCALMSPID="ElectionCommissionMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/ec.example.com/peers/peer0.ec.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/ec.example.com/users/Admin@ec.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:7051
+
+    echo -e "${BLUE}Creating channel 'evotingchannel'...${NC}"
+    # Use localhost instead of orderer1.example.com
+    peer channel create -o localhost:7050 --ordererTLSHostnameOverride orderer1.example.com \
+        -c evotingchannel -f evoting-channel.tx \
+        --tls --cafile ${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+
+    echo -e "${BLUE}Joining EC peer to channel...${NC}"
+    peer channel join -b evotingchannel.block
+
+    # Join Party peer
+    export CORE_PEER_LOCALMSPID="PoliticalPartyMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/party.example.com/peers/peer0.party.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/party.example.com/users/Admin@party.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:8051
+
+    echo -e "${BLUE}Joining Party peer to channel...${NC}"
+    peer channel join -b evotingchannel.block
+
+    # Join Audit peer
+    export CORE_PEER_LOCALMSPID="AuditAuthorityMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/audit.example.com/peers/peer0.audit.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/audit.example.com/users/Admin@audit.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:9051
+
+    echo -e "${BLUE}Joining Audit peer to channel...${NC}"
+    peer channel join -b evotingchannel.block
+
+    echo -e "${GREEN}✅ Channel created and all peers joined successfully!${NC}"
+}
+
 
 # Function to start network
 start_network() {
@@ -116,7 +200,7 @@ start_network() {
     
     # Wait for startup
     echo -e "${BLUE}Waiting for containers to initialize...${NC}"
-    sleep 45
+    sleep 30
 }
 
 # Function to check network status
@@ -140,10 +224,13 @@ check_network_status() {
     if [ "$RUNNING_COUNT" -eq "$TOTAL_EXPECTED" ]; then
         echo -e "${GREEN}🎉 SUCCESS: All containers are running!${NC}"
         check_raft_consensus
+        create_and_join_channel  # ADD THIS LINE
+        #setup_anchor_peers
     else
-        echo -e "${RED}⚠️  Some containers failed to start.${NC}"
+        echo -e "${RED}⚠️ Some containers failed to start.${NC}"
         show_failed_logs
     fi
+
 }
 
 # Function to check Raft consensus
@@ -155,6 +242,51 @@ check_raft_consensus() {
         docker logs orderer$i.example.com 2>/dev/null | grep -i "leader\|elected" | tail -2 || echo "  Still initializing..."
     done
 }
+
+# Add this function after check_raft_consensus()
+setup_anchor_peers() {
+    echo -e "${YELLOW}=====> 5. Setting up Anchor Peers...${NC}"
+    
+    # Wait a bit more for channel to be fully ready
+    sleep 10
+    
+    # Set environment for Election Commission
+    export CORE_PEER_LOCALMSPID="ElectionCommissionMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/ec.example.com/peers/peer0.ec.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/ec.example.com/users/Admin@ec.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:7051
+    
+    echo -e "${BLUE}Updating anchor peer for Election Commission...${NC}"
+    peer channel update -o localhost:7050 --ordererTLSHostnameOverride orderer1.example.com \
+        -c evotingchannel -f ./channel-artifacts/ElectionCommissionMSPanchors.tx \
+        --tls --cafile ${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+    
+    # Set environment for Political Party
+    export CORE_PEER_LOCALMSPID="PoliticalPartyMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/party.example.com/peers/peer0.party.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/party.example.com/users/Admin@party.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:8051
+    
+    echo -e "${BLUE}Updating anchor peer for Political Party...${NC}"
+    peer channel update -o localhost:7050 --ordererTLSHostnameOverride orderer1.example.com \
+        -c evotingchannel -f ./channel-artifacts/PoliticalPartyMSPanchors.tx \
+        --tls --cafile ${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+    
+    # Set environment for Audit Authority  
+    export CORE_PEER_LOCALMSPID="AuditAuthorityMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/audit.example.com/peers/peer0.audit.example.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/audit.example.com/users/Admin@audit.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:9051
+    
+    echo -e "${BLUE}Updating anchor peer for Audit Authority...${NC}"
+    peer channel update -o localhost:7050 --ordererTLSHostnameOverride orderer1.example.com \
+        -c evotingchannel -f ./channel-artifacts/AuditAuthorityMSPanchors.tx \
+        --tls --cafile ${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer1.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+    
+    echo -e "${GREEN}✅ Anchor peers configured successfully!${NC}"
+}
+
+# Then call this function in your main() function after check_raft_consensus
 
 # Main execution
 main() {
